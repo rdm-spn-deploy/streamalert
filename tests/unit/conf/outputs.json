@@ -1,9 +1,9 @@
 {
-  "aws-s3": {
-    "unit_test_bucket": "unit.test.bucket.name"
-  },
   "aws-lambda": {
     "unit_test_lambda": "unit_test_function"
+  },
+  "aws-s3": {
+    "unit_test_bucket": "unit.test.bucket.name"
   },
   "pagerduty": [
     "unit_test_pagerduty"
