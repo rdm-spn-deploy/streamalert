@@ -20,7 +20,6 @@ from nose.tools import assert_equal
 from stream_alert_cli.config import CLIConfig
 from tests.unit.helpers.base import mock_open
 
-
 def test_load_config():
     """CLI - Load config"""
     config_data = {
@@ -51,7 +50,7 @@ def test_load_config():
                 'third_party_libraries': []
             },
             'rule_processor_config': {
-                'handler': 'stream_alert.rule_processor.main.handler',
+                'handler': 'unit-test.handler',
                 'source_bucket': 'PREFIX_GOES_HERE.streamalert.source',
                 'source_current_hash': '<auto_generated>',
                 'source_object_key': '<auto_generated>',
@@ -63,17 +62,48 @@ def test_load_config():
         }
     }
 
-    global_file = 'conf/global.json'
+    # Use a string to retain the order
+    log_data = '''
+{
+    "json_test": {
+        "parser": "json",
+        "schema": {
+            "key_01": "integer",
+            "key_02": "string"
+        }
+    },
+    "csv_test": {
+        "parser": "csv",
+        "schema": {
+            "key1": [],
+            "key2": "string",
+            "key3": "integer",
+            "key9": "boolean",
+            "key10": {},
+            "key11": "float"
+        }
+    }
+}
+'''
+
+    global_file = 'tests/unit/conf/global.json'
     global_contents = json.dumps(config_data['global'], indent=2)
 
-    lambda_file = 'conf/lambda.json'
+    lambda_file = 'tests/unit/conf/lambda.json'
     lambda_contents = json.dumps(config_data['lambda'], indent=2)
+
+    logs_file = 'tests/unit/conf/logs.json'
 
     with mock_open(global_file, global_contents):
         with mock_open(lambda_file, lambda_contents):
-            # mock os call
+            with mock_open(logs_file, log_data):
+                config = CLIConfig(config_path='tests/unit/conf')
 
-            # test valid and invalid clusters
+                assert_equal(config['global']['account']['prefix'], 'unit-testing')
+                assert_equal(config['lambda']['rule_processor_config']['handler'],
+                             'unit-test.handler')
+                assert_equal(set(config['logs'].keys()),
+                             {'json_test', 'csv_test'})
 
-            config = CLIConfig()
-            assert_equal(config['global']['account']['prefix'], 'unit-testing')
+                # Check that the csv schema retains its order
+                assert_equal(config['logs']['csv_test']['schema'].keys()[0], 'key1')
